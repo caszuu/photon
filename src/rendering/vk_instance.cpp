@@ -23,7 +23,7 @@ namespace photon::rendering {
             if (!found) {
                 if (req_ext.second) continue;
 
-                throw std::runtime_error(std::format("Requested instance extension not supported by device: {}", req_ext));
+                throw std::runtime_error(std::format("Requested instance extension not supported by device: {}", req_ext.first));
             }
 
             enabled_extensions.emplace_back(req_ext.first);
@@ -49,7 +49,7 @@ namespace photon::rendering {
             if (!found) {
                 if (req_layer.second) continue;
 
-                throw std::runtime_error(std::format("Requested instance layer not supported by device: {}", req_layer));
+                throw std::runtime_error(std::format("Requested instance layer not supported by device: {}", req_layer.first));
             }
 
             enabled_layers.emplace_back(req_layer.first);
@@ -92,7 +92,7 @@ namespace photon::rendering {
         if (get_supported_api_version() < VK_API_VERSION_1_3) {
 
             P_LOG_E("Vulkan 1.3 is required and not supported on this device!");
-            abort();
+            engine_abort();
         }
 
         try {
@@ -110,10 +110,10 @@ namespace photon::rendering {
 
                 vk::InstanceCreateInfo instance_info{
                     .pApplicationInfo = &app_info,
-                    .ppEnabledExtensionNames = extensions.data(),
-                    .enabledExtensionCount = extensions.size(),
-                    .ppEnabledLayerNames = layers.data(),
                     .enabledLayerCount = layers.size(),
+                    .ppEnabledLayerNames = layers.data(),
+                    .enabledExtensionCount = extensions.size(),
+                    .ppEnabledExtensionNames = extensions.data(),
                 };
 
                 vk_instance = vk::createInstance(instance_info);
@@ -127,8 +127,8 @@ namespace photon::rendering {
             
             if (enabled_extensions.contains(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
                 vk::DebugUtilsMessengerCreateInfoEXT debug_message_info{
-                    .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
                     .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                    .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
                     .pfnUserCallback = &vulkan_messenger_callback,
                 };
 
@@ -137,7 +137,7 @@ namespace photon::rendering {
 
         } catch(std::exception &e) {
             P_LOG_E("Failed to init Vulkan: {}", e.what());
-            abort();
+            engine_abort();
         }
     }
 

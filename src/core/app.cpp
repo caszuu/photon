@@ -1,13 +1,18 @@
 #include "app.hpp"
 
 namespace photon {
-    PhotonApp::PhotonApp() noexcept :
-        app_window{ { 1280, 720 } }
+    photon_app::photon_app() noexcept :
+        app_window{ { 1280, 720 } },
+        rstack{app_window}
     {
         
     }
 
-    PhotonApp::~PhotonApp() noexcept {
+    photon_app::~photon_app() noexcept {
 
+    }
+
+    void photon_app::launch() noexcept {
+        
     }
 }

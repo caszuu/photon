@@ -1,16 +1,18 @@
 #pragma once
 
 #include <core/window.hpp>
+#include <rendering/rendering_stack.hpp>
 
 namespace photon {
-    class PhotonApp {
+    class photon_app {
     public:
-        PhotonApp() noexcept;
-        ~PhotonApp() noexcept;
+        photon_app() noexcept;
+        ~photon_app() noexcept;
     
         void launch() noexcept;
 
     private:
-        Window app_window;
+        window app_window;
+        rendering::rendering_stack rstack;
     };
 }

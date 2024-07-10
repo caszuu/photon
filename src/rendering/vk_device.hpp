@@ -16,7 +16,7 @@ namespace photon::rendering {
             // the [graphics_queue] will have support for presenting to this surface, null surface will skip the check
             vk::SurfaceKHR target_surface;
 
-            std::vector<std::pair<const char*, bool /*is_optional*/>> requested_extensions;
+            std::vector<std::pair<const char*, bool /*is_required*/>> requested_extensions;
         };
 
         vulkan_device(const device_config& config) noexcept;

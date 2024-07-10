@@ -123,7 +123,7 @@ namespace photon::rendering {
             }
 
             if (!found) {
-                if (req_ext.second) continue;
+                if (!req_ext.second) continue;
 
                 throw std::runtime_error(std::format("Requested Vulkan device extension not supported: {}", req_ext.first));
             }

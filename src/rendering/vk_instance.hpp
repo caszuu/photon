@@ -11,8 +11,8 @@ namespace photon::rendering {
     class vulkan_instance {
     public:
         struct instance_config {
-            std::vector<std::pair<const char*, bool /*is_optional*/>> requested_extensions;
-            std::vector<std::pair<const char*, bool /*is_optional*/>> requested_layers;
+            std::vector<std::pair<const char*, bool /*is_required*/>> requested_extensions;
+            std::vector<std::pair<const char*, bool /*is_required*/>> requested_layers;
         };
 
         vulkan_instance(const instance_config& config) noexcept;

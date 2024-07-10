@@ -21,7 +21,7 @@ namespace photon::rendering {
             }
 
             if (!found) {
-                if (req_ext.second) continue;
+                if (!req_ext.second) continue;
 
                 throw std::runtime_error(std::format("Requested instance extension not supported by device: {}", req_ext.first));
             }
@@ -47,7 +47,7 @@ namespace photon::rendering {
             }
 
             if (!found) {
-                if (req_layer.second) continue;
+                if (!req_layer.second) continue;
 
                 throw std::runtime_error(std::format("Requested instance layer not supported by device: {}", req_layer.first));
             }

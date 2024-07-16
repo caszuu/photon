@@ -33,7 +33,7 @@ namespace photon::rendering {
         assert(active_batch_index != max_frame_in_flight);
         FrameBatch& batch = frame_batches[active_batch_index];
         
-        if (batch.cmds_in_use + 1 == batch.batch_cmds.size()) {
+        if (batch.cmds_in_use == batch.batch_cmds.size()) {
             // ran out of idle cmds, allocate a new one
 
             vk::CommandBufferAllocateInfo alloc_info{

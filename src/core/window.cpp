@@ -14,11 +14,14 @@ namespace photon {
 
         window_handle = SDL_CreateWindow("photon app", config.width, config.height, SDL_WINDOW_VULKAN);
 
-        
+        if (!window_handle) {
+            P_LOG_E("Failed to init a SDL window: {}", SDL_GetError());
+            engine_abort();
+        }
     }
 
     window::~window() noexcept {
-
+        SDL_DestroyWindow(window_handle);
     }
 
     void window::add_required_instance_extensions(std::vector<std::pair<const char*, bool>>& extensions) noexcept {
@@ -27,7 +30,7 @@ namespace photon {
         
         std::span<const char *const> sdl_extensions(ext_data, ext_count);
         for (auto* ext : sdl_extensions) {
-            extensions.emplace_back(std::make_pair(ext, true));
+            extensions.emplace_back(ext, true);
         }
     }
 

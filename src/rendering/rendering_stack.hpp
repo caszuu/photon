@@ -4,6 +4,8 @@
 #include "vk_device.hpp"
 #include "vk_display.hpp"
 
+#include <assets/streamer.hpp>
+
 namespace photon::rendering {
     class rendering_stack {
     public:
@@ -16,6 +18,8 @@ namespace photon::rendering {
         vulkan_instance vk_instance;
         vulkan_device vk_device;
         vulkan_display vk_display;
+
+        asset_streamer streamer;
 
         // std::unique<renderer_interface> active_renderer;
     };

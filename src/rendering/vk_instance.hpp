@@ -25,6 +25,8 @@ namespace photon::rendering {
             catch(std::exception &e) { return 0; } // note: ignoring vk 1.0 here
         }
 
+        uint32_t get_instance_api_version() const noexcept { return api_version; }
+
         // note: only the VK_ prefixed name marcos must be used as the pointers are used for the lookup
         bool is_extension_enabled(const char* name) noexcept { return enabled_extensions.contains(name); }
         bool is_layer_enabled(const char* name) noexcept { return enabled_layers.contains(name); }
@@ -40,5 +42,7 @@ namespace photon::rendering {
 
         std::set<const char*> enabled_extensions;
         std::set<const char*> enabled_layers;
+
+        uint32_t api_version;
     };
 }

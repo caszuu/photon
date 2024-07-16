@@ -28,6 +28,9 @@ namespace photon::rendering {
                 }
             }
 
+            vk::PhysicalDeviceProperties device_props = physical_device.getProperties();
+            P_LOG_I("Using Vulkan {}.{}.{} device: {}", VK_VERSION_MAJOR(instance.get_instance_api_version()), VK_VERSION_MINOR(instance.get_instance_api_version()), VK_VERSION_PATCH(instance.get_instance_api_version()), device_props.deviceName.data());
+
             // create a logical device
 
             {
@@ -53,7 +56,7 @@ namespace photon::rendering {
                         queue_infos[1] = transfer_queue.value();
                         transfer_queue_family_index = queue_infos[1].queueFamilyIndex;
 
-                        P_LOG_I("Using a second Vulkan transfer queue!");
+                        P_LOG_D("Using a second Vulkan transfer queue!");
                     } else {
                         P_LOG_D("No usable transfer queue found, using main queue for transfers");
                     }
@@ -83,6 +86,54 @@ namespace photon::rendering {
                 if (~transfer_queue_family_index) {
                     transfer_queue = device.getQueue(transfer_queue_family_index, 0);
                 }
+
+                // load extension fn pointers
+                VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
+            }
+
+            {
+                // init VMA
+
+                VmaVulkanFunctions vk_functions{
+                    .vkGetPhysicalDeviceProperties = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceProperties,
+                    .vkGetPhysicalDeviceMemoryProperties = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties,
+                    .vkAllocateMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkAllocateMemory,
+                    .vkFreeMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkFreeMemory,
+                    .vkMapMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkMapMemory,
+                    .vkUnmapMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkUnmapMemory,
+                    .vkFlushMappedMemoryRanges = VULKAN_HPP_DEFAULT_DISPATCHER.vkFlushMappedMemoryRanges,
+                    .vkInvalidateMappedMemoryRanges = VULKAN_HPP_DEFAULT_DISPATCHER.vkInvalidateMappedMemoryRanges,
+                    .vkBindBufferMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkBindBufferMemory,
+                    .vkBindImageMemory = VULKAN_HPP_DEFAULT_DISPATCHER.vkBindImageMemory,
+                    .vkGetBufferMemoryRequirements = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetBufferMemoryRequirements,
+                    .vkGetImageMemoryRequirements = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetImageMemoryRequirements,
+                    .vkCreateBuffer = VULKAN_HPP_DEFAULT_DISPATCHER.vkCreateBuffer,
+                    .vkDestroyBuffer = VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyBuffer,
+                    .vkCreateImage = VULKAN_HPP_DEFAULT_DISPATCHER.vkCreateImage,
+                    .vkDestroyImage = VULKAN_HPP_DEFAULT_DISPATCHER.vkDestroyImage,
+                    .vkCmdCopyBuffer = VULKAN_HPP_DEFAULT_DISPATCHER.vkCmdCopyBuffer,
+                    .vkGetBufferMemoryRequirements2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetBufferMemoryRequirements2,
+                    .vkGetImageMemoryRequirements2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetImageMemoryRequirements2,
+                    .vkBindBufferMemory2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkBindBufferMemory2,
+                    .vkBindImageMemory2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkBindImageMemory2,
+                    .vkGetPhysicalDeviceMemoryProperties2KHR = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceMemoryProperties2,
+                };
+
+                if (instance.get_instance_api_version() >= VK_API_VERSION_1_3) {
+                    vk_functions.vkGetDeviceBufferMemoryRequirements = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceBufferMemoryRequirements;
+                    vk_functions.vkGetDeviceImageMemoryRequirements = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceImageMemoryRequirements;
+                }
+
+                VmaAllocatorCreateInfo allocator_info{
+                    .physicalDevice = physical_device,
+                    .device = device,
+                    .pVulkanFunctions = &vk_functions,
+                    .instance = instance.get_instance(),
+                    .vulkanApiVersion = instance.get_instance_api_version(),
+                };
+
+                VkResult res = vmaCreateAllocator(&allocator_info, &allocator);
+                vk::resultCheck(static_cast<vk::Result>(res), "Failed to create a VMA allocator");
             }
 
         } catch (std::exception& e) {

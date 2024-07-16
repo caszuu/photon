@@ -17,5 +17,6 @@ endif()
 add_subdirectory(ext/SDL)
 # find_package(Vulkan REQUIRED)
 add_subdirectory(ext/Vulkan-Hpp)
+add_subdirectory(ext/VulkanMemoryAllocator)
 
 add_subdirectory(src)

@@ -3,6 +3,9 @@
 #include <core/logger.hpp>
 #include <core/abort.hpp>
 
+#define VMA_IMPLEMENTATION 1
+#include "vma_usage.hpp"
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace photon::rendering {
@@ -95,6 +98,8 @@ namespace photon::rendering {
             engine_abort();
         }
 
+        api_version = get_supported_api_version();
+
         try {
             {
                 vk::ApplicationInfo app_info{
@@ -102,7 +107,7 @@ namespace photon::rendering {
                     .applicationVersion = 1,
                     .pEngineName = "photon",
                     .engineVersion = 1,
-                    .apiVersion = VK_API_VERSION_1_3,
+                    .apiVersion = api_version,
                 };
 
                 std::vector<const char*> extensions = enable_extensions(config);

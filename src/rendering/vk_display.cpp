@@ -8,13 +8,13 @@ namespace photon::rendering {
     vulkan_display::vulkan_display(const display_config& config) noexcept :
         device{config.device},
         target_surface{config.target_surface},
-        preferred_mode{config.preferred_mode},
+        initial_swapchain_extent{config.initial_swapchain_extent},
         min_swapchain_image_count{config.min_swapchain_image_count}
     {
         assert(target_surface && "null target_surface");
 
         try {
-            recreate_swapchain();
+            recreate_swapchain(config.initial_swapchain_config);
         } catch (std::exception &e) {
             P_LOG_E("Failed to create a new Vulkan Swapchain: {}", e.what());
             engine_abort();
@@ -22,9 +22,10 @@ namespace photon::rendering {
     }
 
     vulkan_display::~vulkan_display() noexcept {
-        // SDL_Vulkan_DestroySurface();
+        assert(swapchain.unique() && "Swapchain handles still exists while destroying its surface"); // assume all swapchain handles are released
+        swapchain.reset();
+
         device.get_instance().get_instance().destroySurfaceKHR(target_surface);
-        // device.get_device().destroySwapchainKHR(swapchain);
     }
 
     vk::SurfaceFormatKHR vulkan_display::choose_surface_format() {
@@ -47,7 +48,7 @@ namespace photon::rendering {
         return vk::PresentModeKHR::eFifo;
     }
 
-    void vulkan_display::recreate_swapchain() {
+    void vulkan_display::recreate_swapchain(const std::optional<swapchain_config>& config) {
         std::shared_ptr<swapchain_handle> old_swapchain = swapchain;
 
         {
@@ -56,14 +57,16 @@ namespace photon::rendering {
             vk::SurfaceCapabilitiesKHR surface_caps = device.get_physical_device().getSurfaceCapabilitiesKHR(target_surface);
             
             surface_format = choose_surface_format();
-            present_mode = choose_present_mode(preferred_mode);
+
+            if (config)
+                present_mode = choose_present_mode(config->preferred_mode);
 
             vk::SwapchainCreateInfoKHR swapchain_info{
                 .surface = target_surface,
                 .minImageCount = min_swapchain_image_count,
                 .imageFormat = surface_format.format,
                 .imageColorSpace = surface_format.colorSpace,
-                .imageExtent = surface_caps.currentExtent,
+                .imageExtent = surface_caps.currentExtent.width == ~0U && surface_caps.currentExtent.height == ~0U ? initial_swapchain_extent : surface_caps.currentExtent,
                 .imageArrayLayers = 1,
                 .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
                 .imageSharingMode = vk::SharingMode::eExclusive,
@@ -79,6 +82,26 @@ namespace photon::rendering {
 
         {
             // query sapchain images
+
+            swapchain->images = device.get_device().getSwapchainImagesKHR(swapchain->swapchain);
+
+            vk::ImageViewCreateInfo view_info{
+                .viewType = vk::ImageViewType::e2D,
+                .format = surface_format.format,
+                .subresourceRange{
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1,
+                },
+            };
+
+            swapchain->image_views.reserve(swapchain->images.size());
+            for (auto image : swapchain->images) {
+                view_info.image = image;
+                swapchain->image_views.emplace_back(device.get_device().createImageView(view_info));
+            }
         }
     }
 }

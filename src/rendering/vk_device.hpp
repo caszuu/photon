@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vk_instance.hpp"
+#include "vma_usage.hpp"
 
 #include <optional>
 #include <span>
@@ -25,6 +26,7 @@ namespace photon::rendering {
         vk::Device get_device() noexcept { return device; }
         vk::PhysicalDevice get_physical_device() noexcept { return physical_device; }
         vulkan_instance& get_instance() noexcept { return instance; }
+        VmaAllocator get_allocator() noexcept { return allocator; }
 
         // [is_transfer] controls if should be submited to the transfer queue (if available)
         // note: fence is optional according to vulkan spec
@@ -49,6 +51,7 @@ namespace photon::rendering {
         
         vulkan_instance& instance;
         vk::PhysicalDevice physical_device;
+        VmaAllocator allocator = VK_NULL_HANDLE;
 
         std::set<const char*> active_extensions;
 

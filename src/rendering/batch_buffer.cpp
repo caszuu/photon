@@ -12,12 +12,8 @@ namespace photon::rendering {
         for (uint32_t i = 0; i < max_frame_in_flight; i++) {
             vk::CommandPoolCreateInfo pool_info;
             pool_info.queueFamilyIndex = device.get_queue_family(is_transfer);
-
-            vk::FenceCreateInfo fence_info {
-                .flags = vk::FenceCreateFlagBits::eSignaled,
-            };
             
-            frame_batches.emplace_back(std::vector<vk::CommandBuffer>{}, device.get_device().createCommandPool(pool_info), device.get_device().createFence(fence_info), 0);
+            frame_batches.emplace_back(std::vector<vk::CommandBuffer>{}, device.get_device().createCommandPool(pool_info), 0);
         }
     }
     
@@ -55,22 +51,11 @@ namespace photon::rendering {
         return cmd;
     }
 
-    // FIXME: overall submit semaphores, fences
-    void batch_buffer::submit_batch(std::span<vk::CommandBuffer> cmds) {
+    void batch_buffer::submit_batch(std::span<vk::SubmitInfo> infos, vk::Fence submit_fence) {
         assert(active_batch_index != max_frame_in_flight);
         FrameBatch& batch = frame_batches[active_batch_index];
         active_batch_index = max_frame_in_flight;
 
-        vk::SubmitInfo submit_info{
-            /*.waitSemaphoreCount = ,
-            .pWaitDstStageMask = ,
-            .pWaitSemaphores = ,
-            .signalSemaphoreCount = ,
-            .pSignalSemaphores = , */
-            .commandBufferCount = cmds.size(),
-            .pCommandBuffers = cmds.data(),
-        };
-
-        device.submit(std::span(&submit_info, 1), batch.frame_fence, is_transfer);
+        device.submit(infos, submit_fence, is_transfer);
     }
 }

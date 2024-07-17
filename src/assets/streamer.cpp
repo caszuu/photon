@@ -1,6 +1,7 @@
 #include "streamer.hpp"
 #include <cassert>
 
+#include <core/abort.hpp>
 #include <core/logger.hpp>
 
 namespace photon::rendering {
@@ -9,17 +10,22 @@ namespace photon::rendering {
         batch_cmd_buffer{device, max_frames_in_flight, true},
         max_frames_in_flight{max_frames_in_flight}
     {
-        vk::FenceCreateInfo fence_info{
-            .flags = vk::FenceCreateFlagBits::eSignaled,
-        };
+        try {
+            vk::FenceCreateInfo fence_info{
+                .flags = vk::FenceCreateFlagBits::eSignaled,
+            };
 
-        vk::SemaphoreCreateInfo semaphore_info{};
+            vk::SemaphoreCreateInfo semaphore_info{};
 
-        batch_buffers.reserve(max_frames_in_flight);
-        for (uint32_t i = 0; i < max_frames_in_flight; i++) {
-            multi_fence fence(device, fence_info);
+            batch_buffers.reserve(max_frames_in_flight);
+            for (uint32_t i = 0; i < max_frames_in_flight; i++) {
+                multi_fence fence(device, fence_info);
 
-            batch_buffers.emplace_back(fence, device.get_device().createSemaphore(semaphore_info));
+                batch_buffers.emplace_back(fence, device.get_device().createSemaphore(semaphore_info));
+            }
+        } catch(std::exception& e) {
+            P_LOG_E("Failed to init asset_streamer: {}", e.what());
+            engine_abort();
         }
     }
 
@@ -27,6 +33,8 @@ namespace photon::rendering {
         for (auto& batch : batch_buffers) {
             assert(batch.ready_fence.status() == vk::Result::eSuccess); // assume device is idle
             
+            // infos
+
             for (auto& stream : batch.blocking.buffer_infos) {
                 vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
             }
@@ -41,13 +49,55 @@ namespace photon::rendering {
                 vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
             }
 
+            // retired infos
+
+            for (auto& stream : batch.retired_blocking.buffer_infos) {
+                vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+            }
+            for (auto& stream : batch.retired_blocking.image_infos) {
+                vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+            }
+
+            for (auto& stream : batch.retired_deferred.buffer_infos) {
+                vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+            }
+            for (auto& stream : batch.retired_deferred.image_infos) {
+                vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+            }
+
             device.get_device().destroySemaphore(batch.blocking_ready_semaphore);
         }
     }
 
-    vk::Semaphore asset_streamer::submit_batch() {
+    vk::Semaphore asset_streamer::submit_batch(uint32_t next_frame_index) {
         frame_buffer& batch = batch_buffers[current_frame_index];
-        // assert(batch.ready_fence.status() == vk::Result::eSuccess);
+        assert(batch.ready_fence.status() == vk::Result::eSuccess && "Stream batch reset before being finished");
+
+        batch.ready_fence.reset();
+
+        // cleanup retired staging buffers
+
+        for (auto& stream : batch.retired_blocking.buffer_infos) {
+            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+        }
+        batch.retired_blocking.buffer_infos.clear();
+        
+        for (auto& stream : batch.retired_blocking.image_infos) {
+            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+        }
+        batch.retired_blocking.image_infos.clear();
+
+        for (auto& stream : batch.retired_deferred.buffer_infos) {
+            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+        }
+        batch.retired_deferred.buffer_infos.clear();
+        
+        for (auto& stream : batch.retired_deferred.image_infos) {
+            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
+        }
+        batch.retired_deferred.image_infos.clear();
+
+        batch_cmd_buffer.reset_batch(current_frame_index);
 
         vk::CommandBuffer blocking_cmd = begin_stream_recording();
         record_streams(blocking_cmd, batch.blocking);
@@ -82,44 +132,19 @@ namespace photon::rendering {
             },
         };
 
-        device.submit(submit_infos, batch.ready_fence.get_fence(), true);
+        batch_cmd_buffer.submit_batch(submit_infos, batch.ready_fence.get_fence());
         current_frame_index = max_frames_in_flight;
 
+        // retire in-use infos
+        batch.retired_blocking = std::move(batch.blocking);
+        batch.retired_deferred = std::move(batch.deferred);
+
+        batch.blocking = frame_buffer::streams_buffer();
+        batch.deferred = frame_buffer::streams_buffer();
+
+        current_frame_index = next_frame_index;
+
         return batch.blocking_ready_semaphore;
-    }
-
-    void asset_streamer::reset_batch(uint32_t frame_index) noexcept {
-        // assert(current_frame_index == max_frames_in_flight); // assume batches can't be reset without a submit
-        current_frame_index = frame_index;
-
-        // cleanup old batch
-        frame_buffer& batch = batch_buffers[current_frame_index];
-
-        assert(batch.ready_fence.status() == vk::Result::eSuccess && "Stream batch reset before being finished");
-
-        for (auto& stream : batch.blocking.buffer_infos) {
-            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
-        }
-        batch.blocking.buffer_infos.clear();
-        
-        for (auto& stream : batch.blocking.image_infos) {
-            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
-        }
-        batch.blocking.image_infos.clear();
-
-        for (auto& stream : batch.deferred.buffer_infos) {
-            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
-        }
-        batch.deferred.buffer_infos.clear();
-        
-        for (auto& stream : batch.deferred.image_infos) {
-            vmaDestroyBuffer(device.get_allocator(), stream.staging_buf, stream.staging_alloc);
-        }
-        batch.deferred.image_infos.clear();
-
-        batch_cmd_buffer.reset_batch(frame_index);
-
-        batch.ready_fence.reset();
     }
 
     multi_fence_view asset_streamer::stream(const buffer_stream_info& stream, bool is_deferred) noexcept {

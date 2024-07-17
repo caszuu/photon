@@ -25,6 +25,7 @@ namespace photon::rendering {
 
         vk::Device get_device() noexcept { return device; }
         vk::PhysicalDevice get_physical_device() noexcept { return physical_device; }
+        vk::Queue get_queue(bool is_transfer) noexcept { return is_transfer && transfer_queue ? transfer_queue : graphics_queue; }
         vulkan_instance& get_instance() noexcept { return instance; }
         VmaAllocator get_allocator() noexcept { return allocator; }
 
@@ -34,7 +35,7 @@ namespace photon::rendering {
     
         // note: only the VK_ prefixed name marcos must be used as the pointers are used for the lookup
         bool has_extension(const char* name) const noexcept { return active_extensions.contains(name); }
-        uint32_t get_queue_family(bool is_transfer) const noexcept { return is_transfer ? transfer_queue_family_index : graphics_queue_family_index; }
+        uint32_t get_queue_family(bool is_transfer) const noexcept { return is_transfer && transfer_queue ? transfer_queue_family_index : graphics_queue_family_index; }
 
     private:
         static bool is_physical_device_suitable(vk::PhysicalDevice device, const device_config& config) noexcept;

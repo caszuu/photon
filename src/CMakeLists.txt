@@ -11,7 +11,9 @@ add_executable(photon-app
         rendering/vk_instance.cpp
         rendering/vk_device.cpp
         rendering/vk_display.cpp
-        rendering/batch_buffer.cpp)
+        rendering/batch_buffer.cpp
+        
+        rendering/forward/forward.cpp)
 
 target_compile_features(photon-app PRIVATE cxx_std_20)
 target_compile_definitions(photon-app PRIVATE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC)

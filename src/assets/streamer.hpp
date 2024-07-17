@@ -15,12 +15,10 @@ namespace photon::rendering {
         asset_streamer(rendering::vulkan_device& device, uint32_t max_frames_in_flight) noexcept;
         ~asset_streamer() noexcept;
 
-        // submits the submit batch to the device transfer queue
+        // submits the submit batch to the device transfer queue, the previous submit by the current batch must *not* be in flight by this point
+        // the streamer will automatically reset to the batch [next_frame_index] and can be used immidiatelly after submit (even if that batch is in flight)
         // returns the semaphore used for waiting for the blocking part of the stream batch
-        vk::Semaphore submit_batch();
-
-        // resets the streamer and switches to the next available batch buffer, the next frame index must be not in flight by this point
-        void reset_batch(uint32_t frame_index) noexcept;
+        vk::Semaphore submit_batch(uint32_t next_frame_index);
 
         struct buffer_stream_info {
             vk::Buffer staging_buf; 
@@ -57,6 +55,9 @@ namespace photon::rendering {
 
             streams_buffer blocking;
             streams_buffer deferred;
+
+            streams_buffer retired_blocking;
+            streams_buffer retired_deferred;
 
             multi_fence ready_fence;
             vk::Semaphore blocking_ready_semaphore;

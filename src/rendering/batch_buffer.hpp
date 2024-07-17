@@ -23,8 +23,8 @@ namespace photon::rendering {
 
         vk::CommandBuffer begin_recording(const vk::CommandBufferBeginInfo& begin_info);
 
-        // submits cmds to the vulkan queue; after a submit it's incorect to begin_recording() before calling reset_batch() on the next frame
-        void submit_batch(std::span<vk::CommandBuffer> cmds);
+        // submits to the vulkan queue; after a submit it's incorect to begin_recording() before calling reset_batch() on the next frame
+        void submit_batch(std::span<vk::SubmitInfo> infos, vk::Fence submit_fence);
 
     private:
         vulkan_device& device;
@@ -33,7 +33,6 @@ namespace photon::rendering {
             std::vector<vk::CommandBuffer> batch_cmds;
             vk::CommandPool batch_pool;
 
-            vk::Fence frame_fence;
             uint32_t cmds_in_use;
         };
 

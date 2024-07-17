@@ -57,6 +57,7 @@ namespace photon::rendering {
             vk::SurfaceCapabilitiesKHR surface_caps = device.get_physical_device().getSurfaceCapabilitiesKHR(target_surface);
             
             surface_format = choose_surface_format();
+            surface_extent = surface_caps.currentExtent.width == ~0U && surface_caps.currentExtent.height == ~0U ? initial_swapchain_extent : surface_caps.currentExtent;
 
             if (config)
                 present_mode = choose_present_mode(config->preferred_mode);
@@ -66,7 +67,7 @@ namespace photon::rendering {
                 .minImageCount = min_swapchain_image_count,
                 .imageFormat = surface_format.format,
                 .imageColorSpace = surface_format.colorSpace,
-                .imageExtent = surface_caps.currentExtent.width == ~0U && surface_caps.currentExtent.height == ~0U ? initial_swapchain_extent : surface_caps.currentExtent,
+                .imageExtent = surface_extent,
                 .imageArrayLayers = 1,
                 .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
                 .imageSharingMode = vk::SharingMode::eExclusive,

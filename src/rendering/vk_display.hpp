@@ -55,6 +55,10 @@ namespace photon::rendering {
         // used for "holding" onto images under a swapchain while there're still operations with it ongoing
         std::shared_ptr<swapchain_handle> get_swapchain() noexcept { return swapchain; }
 
+        vk::SurfaceFormatKHR get_display_format() const noexcept { return surface_format; }
+        vk::PresentModeKHR get_present_mode() const noexcept { return present_mode; }
+        vk::Extent2D get_display_extent() const noexcept { return surface_extent; }
+
     private:
         vulkan_device& device;
 
@@ -66,6 +70,7 @@ namespace photon::rendering {
 
         vk::SurfaceFormatKHR surface_format;
         vk::PresentModeKHR present_mode;
+        vk::Extent2D surface_extent;
 
         vk::Extent2D initial_swapchain_extent;
         uint32_t min_swapchain_image_count;

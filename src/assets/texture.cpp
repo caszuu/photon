@@ -139,7 +139,7 @@ namespace photon {
         vk::ImageViewCreateInfo view_info{
             .viewType = vk::ImageViewType::e2D,
             .format = image_info.format,
-            .components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA },
+            // .components = { vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG, vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA },
             .subresourceRange{
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,

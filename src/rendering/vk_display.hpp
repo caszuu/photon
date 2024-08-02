@@ -50,7 +50,7 @@ namespace photon::rendering {
         vulkan_display(const display_config& config) noexcept;
         ~vulkan_display() noexcept;
 
-        void recreate_swapchain(const std::optional<swapchain_config>& config);
+        void refresh_swapchain(const std::optional<swapchain_config>& config);
 
         // used for "holding" onto images under a swapchain while there're still operations with it ongoing
         std::shared_ptr<swapchain_handle> get_swapchain() noexcept { return swapchain; }

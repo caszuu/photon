@@ -4,8 +4,8 @@ add_executable(photon-app
         core/app.cpp
         core/window.cpp
 
-        assets/streamer.cpp
-        assets/texture.cpp
+        resources/streamer.cpp
+        resources/texture.cpp
         
         rendering/rendering_stack.cpp
         rendering/vk_instance.cpp

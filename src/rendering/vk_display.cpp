@@ -14,7 +14,7 @@ namespace photon::rendering {
         assert(target_surface && "null target_surface");
 
         try {
-            recreate_swapchain(config.initial_swapchain_config);
+            refresh_swapchain(config.initial_swapchain_config);
         } catch (std::exception &e) {
             P_LOG_E("Failed to create a new Vulkan Swapchain: {}", e.what());
             engine_abort();
@@ -48,7 +48,7 @@ namespace photon::rendering {
         return vk::PresentModeKHR::eFifo;
     }
 
-    void vulkan_display::recreate_swapchain(const std::optional<swapchain_config>& config) {
+    void vulkan_display::refresh_swapchain(const std::optional<swapchain_config>& config) {
         std::shared_ptr<swapchain_handle> old_swapchain = swapchain;
 
         {

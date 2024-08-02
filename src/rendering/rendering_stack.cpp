@@ -68,6 +68,7 @@ namespace photon::rendering {
         }
 
         frame_swapchains.resize(max_frames_in_flight);
+        frame_invalidated.resize(max_frames_in_flight, false);
     }
 
     rendering_stack::~rendering_stack() noexcept {
@@ -89,31 +90,51 @@ namespace photon::rendering {
 
     void rendering_stack::frame() noexcept {
         try {
-            vk::Result res = vk_device.get_device().waitForFences(frame_fences[current_frame_index], vk::True, std::numeric_limits<uint64_t>::max());
+            // acquire swapchain frame
+    
+            uint32_t acq_image_index;
+                
+            vk::Result res = vk_device.get_device().acquireNextImageKHR(vk_display.get_swapchain()->swapchain, std::numeric_limits<uint64_t>::max(), frame_acquire_sems[current_frame_index], {}, &acq_image_index);
+            if (res == vk::Result::eErrorOutOfDateKHR) {
+                vk_display.refresh_swapchain(std::nullopt);
+                for (uint32_t i = 0; i < max_frames_in_flight; i++) frame_invalidated[i] = true;
+
+                return;
+            } else if (res != vk::Result::eSuccess && res != vk::Result::eSuboptimalKHR) {
+                P_LOG_E("Failed to acquire a vulkan image: {}", static_cast<int32_t>(res));
+                engine_abort();
+            }
+
+            // wait for in flight frame and reset
+
+            res = vk_device.get_device().waitForFences(frame_fences[current_frame_index], vk::True, std::numeric_limits<uint64_t>::max());
             vk::resultCheck(res, "waitForFences");
     
             vk_device.get_device().resetFences(frame_fences[current_frame_index]);
     
             shared_batch_buffer.reset_batch(current_frame_index);
             vk::Semaphore streamer_finished_sem = streamer.submit_batch((current_frame_index + 1) % max_frames_in_flight);
-    
-            // acquire swapchain frame
-    
+            
+            current_image_index = acq_image_index;
             frame_swapchains[current_frame_index] = vk_display.get_swapchain();
-    
-            vk::ResultValue<uint32_t> acq_res = vk_device.get_device().acquireNextImageKHR(frame_swapchains[current_frame_index]->swapchain, std::numeric_limits<uint64_t>::max(), frame_acquire_sems[current_frame_index]);
-            if (acq_res.result != vk::Result::eSuccess || acq_res.result != vk::Result::eSuboptimalKHR) {
-                // FIXME: recreate
-                return;
+
+            if (frame_invalidated[current_frame_index]) {
+                renderer.refresh(current_frame_index);
+
+                frame_invalidated[current_frame_index] = false;
             }
-    
-            current_image_index = acq_res.value;
     
             // record frame cmds
     
             std::vector<vk::CommandBuffer> cmds;
     
-            // renderer.record_frame(cmds);
+            frame_context frame_ctx{
+                .cmds = cmds,
+                .active_swapchain = frame_swapchains[current_frame_index],
+                .frame_index = current_frame_index,
+            };
+
+            renderer.frame(frame_ctx);
     
             // post_processing_pass.record_frame(cmds);
     
@@ -146,10 +167,14 @@ namespace photon::rendering {
                 .pImageIndices = &current_image_index,
             };
     
-            res = vk_device.get_queue(false).presentKHR(present_info);
+            res = vk_device.get_queue(false).presentKHR(&present_info);
     
-            if (acq_res.result != vk::Result::eSuccess) {
-                // FIXME: recreate
+            if (res == vk::Result::eSuboptimalKHR | res == vk::Result::eErrorOutOfDateKHR) {
+                vk_display.refresh_swapchain(std::nullopt);
+                for (uint32_t i = 0; i < max_frames_in_flight; i++) frame_invalidated[i] = true;
+            } else if (res != vk::Result::eSuccess) {
+                P_LOG_E("Failed to present a vulkan image: {}", static_cast<int32_t>(res));
+                engine_abort();
             }
         } catch (std::exception& e) {
             P_LOG_E("Error while rendering a frame in rendering_stack: {}", e.what());

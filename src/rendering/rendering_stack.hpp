@@ -6,7 +6,7 @@
 
 #include "forward/forward.hpp"
 
-#include <assets/streamer.hpp>
+#include <resources/streamer.hpp>
 #include <vector>
 
 namespace photon::rendering {
@@ -31,6 +31,7 @@ namespace photon::rendering {
         forward_renderer renderer;
 
         std::vector<std::shared_ptr<swapchain_handle>> frame_swapchains;
+        std::vector<bool> frame_invalidated;
 
         // indexed by frame_index
         std::vector<vk::Fence> frame_fences;

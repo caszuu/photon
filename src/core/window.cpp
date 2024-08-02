@@ -12,7 +12,7 @@ namespace photon {
             // TODO: logger
         }
 
-        window_handle = SDL_CreateWindow("photon app", config.width, config.height, SDL_WINDOW_VULKAN);
+        window_handle = SDL_CreateWindow("photon app", config.width, config.height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 
         if (!window_handle) {
             P_LOG_E("Failed to init a SDL window: {}", SDL_GetError());

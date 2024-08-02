@@ -13,6 +13,10 @@ namespace photon {
     }
 
     void photon_app::launch() noexcept {
-        
+        while (!app_window.should_close()) {
+            rstack.frame();
+
+            app_window.poll_events();
+        }
     }
 }

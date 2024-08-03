@@ -7,11 +7,18 @@
 namespace photon::rendering {
     inline static vulkan_instance create_vk_instance() noexcept {
         std::vector<std::pair<const char*, bool>> extensions;
+        std::vector<std::pair<const char*, bool>> layers;
+
         window::add_required_instance_extensions(extensions);
         
+#ifndef NDEBUG
+        // extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, false);
+        layers.emplace_back("VK_LAYER_KHRONOS_validation", false);
+#endif
+
         vulkan_instance::instance_config config{
             .requested_extensions = std::move(extensions),
-            .requested_layers = {},
+            .requested_layers = std::move(layers),
         };
 
         return vulkan_instance(config);
@@ -132,6 +139,7 @@ namespace photon::rendering {
                 .cmds = cmds,
                 .active_swapchain = frame_swapchains[current_frame_index],
                 .frame_index = current_frame_index,
+                .swapchain_image_index = current_image_index,
             };
 
             renderer.frame(frame_ctx);

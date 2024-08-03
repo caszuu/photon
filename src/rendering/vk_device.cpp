@@ -63,21 +63,27 @@ namespace photon::rendering {
                 }
 
                 vk::PhysicalDeviceFeatures enabled_features{
-                    .samplerAnisotropy = VK_TRUE
-                };
+                    .samplerAnisotropy = vk::True,
+                };                
 
                 std::vector<const char*> extensions = enable_extensions(config);
                 active_extensions.insert(extensions.begin(), extensions.end());
 
-                vk::DeviceCreateInfo device_info{
-                    .queueCreateInfoCount = queue_infos.size(),
-                    .pQueueCreateInfos = queue_infos.data(),
-                    .enabledExtensionCount = extensions.size(),
-                    .ppEnabledExtensionNames = extensions.data(),
-                    .pEnabledFeatures = &enabled_features,
+                vk::StructureChain<vk::DeviceCreateInfo, vk::PhysicalDeviceVulkan13Features> device_info{
+                    vk::DeviceCreateInfo {
+                        .queueCreateInfoCount = queue_infos.size(),
+                        .pQueueCreateInfos = queue_infos.data(),
+                        .enabledExtensionCount = extensions.size(),
+                        .ppEnabledExtensionNames = extensions.data(),
+                        .pEnabledFeatures = &enabled_features,
+                    },
+                    vk::PhysicalDeviceVulkan13Features{
+                        .synchronization2 = vk::True,
+                        .dynamicRendering = vk::True,
+                    },
                 };
 
-                device = physical_device.createDevice(device_info);
+                device = physical_device.createDevice(device_info.get<vk::DeviceCreateInfo>());
 
                 // query allocated queues from device 
 
@@ -143,6 +149,7 @@ namespace photon::rendering {
     }
 
     vulkan_device::~vulkan_device() noexcept {
+        vmaDestroyAllocator(allocator);
         device.destroy();
     }
 

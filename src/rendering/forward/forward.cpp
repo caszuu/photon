@@ -54,7 +54,7 @@ namespace photon::rendering {
                 .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite, // assume no shader reads
                 .oldLayout = vk::ImageLayout::eUndefined,
                 .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                .image = ctx.active_swapchain->images[ctx.frame_index],
+                .image = ctx.active_swapchain->images[ctx.swapchain_image_index],
                 .subresourceRange{
                     .aspectMask = vk::ImageAspectFlagBits::eColor,
                     .baseMipLevel = 0,
@@ -73,7 +73,7 @@ namespace photon::rendering {
                 .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
                 .image = depth_images[ctx.frame_index].first,
                 .subresourceRange{
-                    .aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
+                    .aspectMask = vk::ImageAspectFlagBits::eDepth, // | vk::ImageAspectFlagBits::eStencil,
                     .baseMipLevel = 0,
                     .levelCount = 1,
                     .baseArrayLayer = 0,
@@ -92,7 +92,7 @@ namespace photon::rendering {
             // start dynamic rendering
 
             vk::RenderingAttachmentInfo color_info{
-                .imageView = ctx.active_swapchain->image_views[ctx.frame_index],
+                .imageView = ctx.active_swapchain->image_views[ctx.swapchain_image_index],
                 .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
@@ -127,6 +127,10 @@ namespace photon::rendering {
         // draw photon scene
         // TODO
 
+        /* for (auto& draw : scene.drawables) {
+            
+        } */
+
         // finish recording and submit
 
         cmd.endRendering();
@@ -144,7 +148,7 @@ namespace photon::rendering {
                 .dstAccessMask = {},
                 .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
                 .newLayout = vk::ImageLayout::ePresentSrcKHR,
-                .image = ctx.active_swapchain->images[ctx.frame_index],
+                .image = ctx.active_swapchain->images[ctx.swapchain_image_index],
                 .subresourceRange{
                     .aspectMask = vk::ImageAspectFlagBits::eColor,
                     .baseMipLevel = 0,

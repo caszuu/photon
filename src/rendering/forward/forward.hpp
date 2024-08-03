@@ -10,7 +10,8 @@ namespace photon::rendering {
         std::vector<vk::CommandBuffer>& cmds;
         std::shared_ptr<swapchain_handle> active_swapchain;
 
-        uint32_t frame_index; 
+        uint32_t frame_index;
+        uint32_t swapchain_image_index;
     };
 
     // a simple straigthforward forward photon renderer implementation (single-threaded, single-cmd and single-pass)

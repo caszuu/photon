@@ -6,7 +6,9 @@
 
 #include "forward/forward.hpp"
 
+#include "transform_buffers.hpp"
 #include <resources/streamer.hpp>
+
 #include <vector>
 
 namespace photon::rendering {
@@ -17,6 +19,8 @@ namespace photon::rendering {
 
         void frame() noexcept;
 
+        transform_buffers& get_tranform_buffers() noexcept { return transforms; }
+
     private:
         window& target_window;
 
@@ -26,6 +30,8 @@ namespace photon::rendering {
 
         batch_buffer shared_batch_buffer;
         asset_streamer streamer;
+
+        transform_buffers transforms;
 
         // std::unique<renderer_interface> active_renderer;
         forward_renderer renderer;

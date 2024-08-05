@@ -12,6 +12,8 @@ add_executable(photon-app
         rendering/vk_device.cpp
         rendering/vk_display.cpp
         rendering/batch_buffer.cpp
+
+        rendering/transform_buffers.cpp
         
         rendering/forward/forward.cpp)
 

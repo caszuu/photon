@@ -51,6 +51,7 @@ namespace photon::rendering {
         }},
         shared_batch_buffer{vk_device, max_frames_in_flight, false},
         streamer{vk_device, max_frames_in_flight},
+        transforms{vk_device, max_frames_in_flight},
         renderer{vk_device, vk_display, shared_batch_buffer, max_frames_in_flight},
         max_frames_in_flight{max_frames_in_flight}
     {
@@ -112,16 +113,21 @@ namespace photon::rendering {
                 engine_abort();
             }
 
-            // wait for in flight frame and reset
+            // wait for in flight frame reset
 
             res = vk_device.get_device().waitForFences(frame_fences[current_frame_index], vk::True, std::numeric_limits<uint64_t>::max());
             vk::resultCheck(res, "waitForFences");
     
             vk_device.get_device().resetFences(frame_fences[current_frame_index]);
-    
             shared_batch_buffer.reset_batch(current_frame_index);
+
+            // stream writes
+
             vk::Semaphore streamer_finished_sem = streamer.submit_batch((current_frame_index + 1) % max_frames_in_flight);
-            
+            transforms.write_out(current_frame_index);
+
+            // refresh outdated frame resources (after resize)
+
             current_image_index = acq_image_index;
             frame_swapchains[current_frame_index] = vk_display.get_swapchain();
 

@@ -31,8 +31,6 @@ namespace photon {
         static texture load_file(rendering::asset_streamer& streamer, const std::string_view path) noexcept;
 
     private:
-        static void record_stream() noexcept;
-
         vk::Image image;
         vk::ImageView image_view;
         VmaAllocation image_alloc = VK_NULL_HANDLE;

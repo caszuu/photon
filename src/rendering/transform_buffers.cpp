@@ -8,7 +8,7 @@ namespace photon::rendering {
         buffer_instance_count{1024 /*temp.*/},
         max_frames_in_flight{max_frames_in_flight}
     {
-        instance_stride = sizeof(float4x4); // FIXME: min aligment size
+        instance_stride = sizeof(glm::f32mat4x4); // FIXME: min aligment size
         id_alloc.extend(buffer_instance_count);
 
         device_buffers.resize(max_frames_in_flight);
@@ -47,7 +47,7 @@ namespace photon::rendering {
         for (uint32_t i = updates_in_progress_buf.size(); i-- > 0; ) {
             transform_update& update = updates_in_progress_buf[i];
 
-            std::memcpy(device_mapped_data[frame_index] + update.id * instance_stride, &update.data, sizeof(float4x4));
+            std::memcpy(device_mapped_data[frame_index] + update.id * instance_stride, &update.data, sizeof(glm::f32mat4x4));
 
             if (--update.frames_to_write == 0) {
                 updates_in_progress_buf[i] = std::move(updates_in_progress_buf.back());
@@ -59,7 +59,7 @@ namespace photon::rendering {
         }
     }
 
-    void transform_buffers::update_transform(transform_id id, float4x4 data) noexcept {
+    void transform_buffers::update_transform(transform_id id, glm::f32mat4x4 data) noexcept {
         auto iter = updates_in_progress_map.find(id);
 
         if (iter != updates_in_progress_map.end()) {

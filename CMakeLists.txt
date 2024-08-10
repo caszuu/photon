@@ -13,10 +13,13 @@ if(ENABLE_COLORED_OUTPUT)
 	endif()
 endif()
 
+set(GLM_ENABLE_SIMD_SSE2 ON)
+
 # include deps
 add_subdirectory(ext/SDL)
 # find_package(Vulkan REQUIRED)
 add_subdirectory(ext/Vulkan-Hpp)
 add_subdirectory(ext/VulkanMemoryAllocator)
+add_subdirectory(ext/glm)
 
 add_subdirectory(src)

@@ -6,13 +6,14 @@
 #include <core/logger.hpp>
 #include <core/abort.hpp>
 
+#include <glm/glm.hpp>
+
 #include <vector>
 #include <map>
 #include <optional>
 #include <cassert>
 
 namespace photon::rendering {
-    using float4x4 = float;
     using transform_id = uint32_t;
     
     class transform_buffers {
@@ -22,7 +23,7 @@ namespace photon::rendering {
 
         void write_out(uint32_t frame_index) noexcept;
 
-        transform_id create_transform(float4x4 initial_data) noexcept {
+        transform_id create_transform(glm::f32mat4x4 initial_data) noexcept {
             std::optional<transform_id> id = id_alloc.alloc();
 
             if (id) {
@@ -47,7 +48,7 @@ namespace photon::rendering {
             id_alloc.dealloc(id);
         }
 
-        void update_transform(transform_id id, float4x4 initial_data) noexcept;
+        void update_transform(transform_id id, glm::f32mat4x4 initial_data) noexcept;
     private:
         vulkan_device& device;
 
@@ -55,7 +56,7 @@ namespace photon::rendering {
         std::vector<void*> device_mapped_data;
 
         struct transform_update {
-            float4x4 data;
+            glm::f32mat4x4 data;
             transform_id id;
             uint32_t frames_to_write;
         };
